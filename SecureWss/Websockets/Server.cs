@@ -21,32 +21,36 @@ namespace SecureWss.Websockets
             try
             {
                 Debug.Print(DebugLevel.WebSocket, "Creating Server");
-                _wsServer = new WebSocketServer(IPAddress.Any, port, !string.IsNullOrWhiteSpace(certPath));
+                _wsServer = new WebSocketServer(IPAddress.Any, port, !string.IsNullOrWhiteSpace(certPath));                
+
                 if (!string.IsNullOrWhiteSpace(certPath)) 
                 {
                     Debug.Print(DebugLevel.WebSocket, "Assigning SSL Configuration");
-                    _wsServer.SslConfiguration = new ServerSslConfiguration(new X509Certificate2(certPath, certPassword))
+
+                    var cert = new X509Certificate2(certPath, certPassword);
+
+                    Debug.Print($"Cert read from {certPath} result: {cert != null}");
+
+                    _wsServer.SslConfiguration = new ServerSslConfiguration(cert)
                     {
                         ClientCertificateRequired = false,
                         CheckCertificateRevocation = false,
-                        EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls11,
+                        EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls | SslProtocols.Tls11,
                         //this is just to test, you might want to actually validate
                         ClientCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => {
                             Debug.Print(DebugLevel.WebSocket, "ClientCerticateValidation Callback triggered");
                             return true;
                         }
-                    };
+                    };                    
                 }
                 Debug.Print(DebugLevel.WebSocket, "Adding Echo Service");
                 _wsServer.AddWebSocketService<EchoService>("/echo");
                 Debug.Print(DebugLevel.WebSocket, "Assigning Log Info");
                 _wsServer.Log.Level = LogLevel.Trace;
-                _wsServer.Log.Output = delegate
-                {
-                    //Debug.Print(DebugLevel.WebSocket, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
-                };
+                _wsServer.Log.Output = (logData, fileLocation) => Debug.Print(DebugLevel.WebSocket, $"{logData.Level} {logData.Date} {logData.Message}");
                 Debug.Print(DebugLevel.WebSocket, "Starting");
                 _wsServer.Start();
+                Debug.Print(DebugLevel.WebSocket, $"WebSocket Server listening on ${port}");
             }
             catch (Exception ex)
             {

@@ -183,7 +183,7 @@ namespace SecureWss
                 var utility = new BouncyCertificate();
                 Debug.Print($"CreateCert Calling CreateCert");
                 //utility.CreateCert();
-                var certificate = utility.CreateSelfSignedCertificate("CN=CrestronWss", new[] { "RMC4-00107F9CCB5F", "192.168.68.201" }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
+                var certificate = utility.CreateSelfSignedCertificate("CN=RMC4-00107F9CCB5F", new[] { "RMC4-00107F9CCB5F", "192.168.68.201" }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
                 //Debug.Print($"CreateCert Storing Certificate To My.LocalMachine");
                 //utility.AddCertToStore(certificate, StoreName.My, StoreLocation.LocalMachine);
                 Debug.Print($"CreateCert Saving Cert to \\user\\");
@@ -201,7 +201,7 @@ namespace SecureWss
             if (_websocketServer.IsRunning) _websocketServer.Stop();
 
             if (args.Length > 0 && args[0].Equals("secure", StringComparison.OrdinalIgnoreCase))                
-                _websocketServer.Start(42080, @"\user\selfCert.cer", _certificatePassword);
+                _websocketServer.Start(42080, @"\user\selfCert.pfx", _certificatePassword);
             else
                 _websocketServer.Start(42080);
         }

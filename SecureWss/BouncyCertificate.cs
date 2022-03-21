@@ -138,7 +138,7 @@ namespace SecureWss
 
             // Our certificate needs valid from/to values.
             var notBefore = DateTime.UtcNow.Date;
-            var notAfter = notBefore.AddYears(2);
+            var notAfter = notBefore.AddYears(1);
 
             certificateGenerator.SetNotBefore(notBefore);
             certificateGenerator.SetNotAfter(notAfter);
@@ -309,17 +309,21 @@ namespace SecureWss
         {
             // This password is the one attached to the PFX file. Use 'null' for no password.
             // Create PFX (PKCS #12) with private key
-            using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.pfx", false))
+            var bytes = certificate.Export(X509ContentType.Pfx, CertificatePassword);
+            File.WriteAllBytes($"{Path.Combine(outputDirectory, certName)}.pfx", bytes);
+
+            /* using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.pfx", false))
             {
                 try
                 {
-                    writer.Write(certificate.Export(X509ContentType.Pfx, CertificatePassword));
+                    var bytes = certificate.Export(X509ContentType.Pfx, CertificatePassword));
+                    writer.Write()
                 }
                 catch (Exception ex)
                 {
                     CrestronConsole.PrintLine($"Failed to write x509 cert pfx\r\n{ex.Message}");
                 }
-            }
+            } */
             // Create Base 64 encoded CER (public key only)
             using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.cer", false))
             {
