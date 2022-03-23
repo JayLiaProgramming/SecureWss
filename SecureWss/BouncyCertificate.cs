@@ -17,12 +17,12 @@ using Org.BouncyCastle.X509;
 using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
 using X509KeyStorageFlags = System.Security.Cryptography.X509Certificates.X509KeyStorageFlags;
 using X509ContentType = System.Security.Cryptography.X509Certificates.X509ContentType;
-
+using System.Text;
 
 namespace SecureWss
 {
     /// <summary>
-    /// Taken From https://github.com/rlipscombe/bouncy-castle-csharp/blob/master
+    /// Taken From https://github.com/rlipscombe/bouncy-castle-csharp/
     /// </summary>
     internal class BouncyCertificate
     {
@@ -148,7 +148,7 @@ namespace SecureWss
 
             AddAuthorityKeyIdentifier(certificateGenerator, issuerDN, issuerKeyPair, issuerSerialNumber);
             AddSubjectKeyIdentifier(certificateGenerator, subjectKeyPair);
-            AddBasicConstraints(certificateGenerator, isCertificateAuthority);
+            //AddBasicConstraints(certificateGenerator, isCertificateAuthority);
 
             if (usages != null && usages.Any())
                 AddExtendedKeyUsage(certificateGenerator, usages);
@@ -309,16 +309,14 @@ namespace SecureWss
         {
             // This password is the one attached to the PFX file. Use 'null' for no password.
             // Create PFX (PKCS #12) with private key
-            using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.pfx", false))
+            try
             {
-                try
-                {
-                    writer.Write(certificate.Export(X509ContentType.Pfx, CertificatePassword));
-                }
-                catch (Exception ex)
-                {
-                    CrestronConsole.PrintLine($"Failed to write x509 cert pfx\r\n{ex.Message}");
-                }
+                var pfx = certificate.Export(X509ContentType.Pfx, CertificatePassword);
+                File.WriteAllBytes($"{Path.Combine(outputDirectory, certName)}.pfx", pfx);
+            }
+            catch (Exception ex)
+            {
+                CrestronConsole.PrintLine($"Failed to write x509 cert pfx\r\n{ex.Message}");
             }
             // Create Base 64 encoded CER (public key only)
             using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.cer", false))

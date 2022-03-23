@@ -8,6 +8,7 @@ using Org.BouncyCastle.Asn1.X509;
 using SecureWss.Websockets;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -26,7 +27,9 @@ namespace SecureWss
     {
         private Dictionary<string, ConsoleCommand> _consoleCommands;
         private Server _websocketServer;
+        private const string _certificateName = "selfCres";
         private const string _certificatePassword = "cres12345";
+
         /// <summary>
         /// ControlSystem Constructor. Starting point for the SIMPL#Pro program.
         /// Use the constructor to:
@@ -81,7 +84,6 @@ namespace SecureWss
                 Debug.Enabled = true;
                 Debug.Levels.Insert(0, DebugLevel.All);
 
-
                 _consoleCommands = new Dictionary<string, ConsoleCommand>()
                 {
                     { "getcommands", new ConsoleCommand() { Action = ConsoleGetCommands,    Help = "Lists all commands used by the system" } },
@@ -91,6 +93,12 @@ namespace SecureWss
                     { "x509list", new ConsoleCommand()    { Action = ConsoleX509List,       Help = "Lists all X509 Certificates on the system giving the ID (1-8)...hopefully.\rExample wss:[id] X509List 1" } },
                 };
                 CrestronConsole.AddNewConsoleCommand(ConsoleCommandProcessor, "wss", "", ConsoleAccessLevelEnum.AccessOperator);
+                Task.Run(() =>
+                {
+                    if (!File.Exists($"\\user\\{ _certificateName}.pfx"))
+                        CreateCert(null);
+                    _websocketServer.Start(42080, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"\html\wss");
+                });
             }
             catch (Exception e)
             {
@@ -183,12 +191,19 @@ namespace SecureWss
                 var utility = new BouncyCertificate();
                 Debug.Print($"CreateCert Calling CreateCert");
                 //utility.CreateCert();
-                var certificate = utility.CreateSelfSignedCertificate("CN=CrestronWss", new[] { "RMC4-00107F9CCB5F", "192.168.68.201" }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
+                var ipAddress = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0);
+                var hostName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_HOSTNAME, 0);
+                var domainName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_DOMAIN_NAME, 0);
+
+                Debug.Print($"DomainName: {domainName} | HostName: {hostName} | {hostName}.{domainName}@{ipAddress}");
+
+                var certificate = utility.CreateSelfSignedCertificate($"CN={hostName}.{domainName}", new[] { $"{hostName}.{domainName}", ipAddress }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
+                //Crestron fails to let us do this...perhaps it should be done through their Dll's but haven't tested
                 //Debug.Print($"CreateCert Storing Certificate To My.LocalMachine");
                 //utility.AddCertToStore(certificate, StoreName.My, StoreLocation.LocalMachine);
                 Debug.Print($"CreateCert Saving Cert to \\user\\");
                 utility.CertificatePassword = _certificatePassword;
-                utility.WriteCertificate(certificate, @"\user\", "selfCert");
+                utility.WriteCertificate(certificate, @"\user\", _certificateName);
                 Debug.Print($"CreateCert Ending CreateCert");
             }
             catch (Exception ex)
@@ -201,7 +216,7 @@ namespace SecureWss
             if (_websocketServer.IsRunning) _websocketServer.Stop();
 
             if (args.Length > 0 && args[0].Equals("secure", StringComparison.OrdinalIgnoreCase))                
-                _websocketServer.Start(42080, @"\user\selfCert.cer", _certificatePassword);
+                _websocketServer.Start(42080, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"\html\wss");
             else
                 _websocketServer.Start(42080);
         }

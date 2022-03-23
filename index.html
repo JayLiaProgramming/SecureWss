@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+
+    <script type="text/javascript">
+        window.onload = () => {
+            const _ws = new WebSocket("wss://192.168.68.201:42080/echo");
+            _ws.onopen = () => {
+                _ws.send("hello secure echo server");
+            };
+
+            _ws.onmessage = (msg) => {
+                console.log(msg);
+            };
+
+            _ws.onclose = () => {
+                console.log('closed');
+            };
+        }
+    </script>
+</body>
+</html>
