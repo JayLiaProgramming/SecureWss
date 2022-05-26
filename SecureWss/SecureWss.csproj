@@ -37,7 +37,7 @@
       <HintPath>..\packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
     <Reference Include="C5Debugger">
-      <HintPath>..\..\..\C5Debugger\C5Debugger\bin\Release\C5Debugger.dll</HintPath>
+      <HintPath>..\C5Debugger.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.AudioDistribution, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>..\packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.56\lib\net47\Crestron.SimplSharpPro.AudioDistribution.dll</HintPath>
