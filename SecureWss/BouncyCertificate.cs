@@ -18,6 +18,7 @@ using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certi
 using X509KeyStorageFlags = System.Security.Cryptography.X509Certificates.X509KeyStorageFlags;
 using X509ContentType = System.Security.Cryptography.X509Certificates.X509ContentType;
 using System.Text;
+using Org.BouncyCastle.Crypto.Operators;
 
 namespace SecureWss
 {
@@ -124,11 +125,6 @@ namespace SecureWss
 
             certificateGenerator.SetSerialNumber(subjectSerialNumber);
 
-            // Set the signature algorithm. This is used to generate the thumbprint which is then signed
-            // with the issuer's private key. We'll use SHA-256, which is (currently) considered fairly strong.
-            const string signatureAlgorithm = "SHA256WithRSA";
-            certificateGenerator.SetSignatureAlgorithm(signatureAlgorithm);
-
             var issuerDN = new X509Name(issuerName);
             certificateGenerator.SetIssuerDN(issuerDN);
 
@@ -156,8 +152,13 @@ namespace SecureWss
             if (subjectAlternativeNames != null && subjectAlternativeNames.Any())
                 AddSubjectAlternativeNames(certificateGenerator, subjectAlternativeNames);
 
+            // Set the signature algorithm. This is used to generate the thumbprint which is then signed
+            // with the issuer's private key. We'll use SHA-256, which is (currently) considered fairly strong.
+            const string signatureAlgorithm = "SHA256WithRSA";
+
             // The certificate is signed with the issuer's private key.
-            var certificate = certificateGenerator.Generate(issuerKeyPair.Private, random);
+            ISignatureFactory signatureFactory = new Asn1SignatureFactory(signatureAlgorithm, issuerKeyPair.Private, random);
+            var certificate = certificateGenerator.Generate(signatureFactory);
             return certificate;
         }
 
